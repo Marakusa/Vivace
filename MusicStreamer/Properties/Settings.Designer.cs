@@ -58,5 +58,41 @@ namespace Vivace.Properties {
                 this["shuffle"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("800")]
+        public int windowwidth {
+            get {
+                return ((int)(this["windowwidth"]));
+            }
+            set {
+                this["windowwidth"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("500")]
+        public int windowheight {
+            get {
+                return ((int)(this["windowheight"]));
+            }
+            set {
+                this["windowheight"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool windowmaximized {
+            get {
+                return ((bool)(this["windowmaximized"]));
+            }
+            set {
+                this["windowmaximized"] = value;
+            }
+        }
     }
 }

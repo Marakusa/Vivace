@@ -9,12 +9,14 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using VideoLibrary;
 using System.Windows.Media;
+using System.Runtime.InteropServices;
+using System.Drawing;
 
 namespace Vivace
 {
     public partial class Form1 : Form
     {
-        public string version = "0.1.0";
+        public string version = "0.2.1";
 
         public string source = "";
 
@@ -27,9 +29,108 @@ namespace Vivace
         public bool paused = false;
         public bool update = false;
 
+
+        public const int WM_NCLBUTTONDOWN = 0xA1;
+        public const int HT_CAPTION = 0x2;
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern int SendMessage(IntPtr hWnd, int Msg, int wParam, int lParam);
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        public static extern bool ReleaseCapture();
+
+        private void Form1_MouseDown(object sender, MouseEventArgs e)
+        {
+            if (e.Button == MouseButtons.Left)
+            {
+                ReleaseCapture();
+                SendMessage(Handle, WM_NCLBUTTONDOWN, HT_CAPTION, 0);
+            }
+        }
+
+        [DllImport("Gdi32.dll", EntryPoint = "CreateRoundRectRgn")]
+        private static extern IntPtr CreateRoundRectRgn
+        (
+            int nLeftRect,     // x-coordinate of upper-left corner
+            int nTopRect,      // y-coordinate of upper-left corner
+            int nRightRect,    // x-coordinate of lower-right corner
+            int nBottomRect,   // y-coordinate of lower-right corner
+            int nWidthEllipse, // width of ellipse
+            int nHeightEllipse // height of ellipse
+        );
+
+        private const int
+            HTLEFT = 10,
+            HTRIGHT = 11,
+            HTTOP = 12,
+            HTTOPLEFT = 13,
+            HTTOPRIGHT = 14,
+            HTBOTTOM = 15,
+            HTBOTTOMLEFT = 16,
+            HTBOTTOMRIGHT = 17;
+
+        const int _ = 5; // you can rename this variable if you like
+
+        Rectangle Top { get { return new Rectangle(0, 0, this.ClientSize.Width, _); } }
+        Rectangle Left { get { return new Rectangle(0, 0, _, this.ClientSize.Height); } }
+        Rectangle Bottom { get { return new Rectangle(0, this.ClientSize.Height - _, this.ClientSize.Width, _); } }
+        Rectangle Right { get { return new Rectangle(this.ClientSize.Width - _, 0, _, this.ClientSize.Height); } }
+
+        Rectangle TopLeft { get { return new Rectangle(0, 0, _, _); } }
+        Rectangle TopRight { get { return new Rectangle(this.ClientSize.Width - _, 0, _, _); } }
+        Rectangle BottomLeft { get { return new Rectangle(0, this.ClientSize.Height - _, _, _); } }
+        Rectangle BottomRight { get { return new Rectangle(this.ClientSize.Width - _, this.ClientSize.Height - _, _, _); } }
+
+        protected override void WndProc(ref Message message)
+        {
+            base.WndProc(ref message);
+
+            if (message.Msg == 0x84) // WM_NCHITTEST
+            {
+                var cursor = this.PointToClient(Cursor.Position);
+
+                if (TopLeft.Contains(cursor)) message.Result = (IntPtr)HTTOPLEFT;
+                else if (TopRight.Contains(cursor)) message.Result = (IntPtr)HTTOPRIGHT;
+                else if (BottomLeft.Contains(cursor)) message.Result = (IntPtr)HTBOTTOMLEFT;
+                else if (BottomRight.Contains(cursor)) message.Result = (IntPtr)HTBOTTOMRIGHT;
+
+                else if (Top.Contains(cursor)) message.Result = (IntPtr)HTTOP;
+                else if (Left.Contains(cursor)) message.Result = (IntPtr)HTLEFT;
+                else if (Right.Contains(cursor)) message.Result = (IntPtr)HTRIGHT;
+                else if (Bottom.Contains(cursor)) message.Result = (IntPtr)HTBOTTOM;
+            }
+        }
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                const int CS_DROPSHADOW = 0x20000;
+                CreateParams cp = base.CreateParams;
+                cp.ClassStyle |= CS_DROPSHADOW;
+                return cp;
+            }
+        }
+
+        PlaylistImport playlistImport;
+
+        //public Spotify spotify;
+
         public Form1()
         {
             InitializeComponent();
+
+            this.FormBorderStyle = FormBorderStyle.None;
+
+            Width = Properties.Settings.Default.windowwidth;
+            Height = Properties.Settings.Default.windowheight;
+
+            if (Properties.Settings.Default.windowmaximized)
+            {
+                MaximizedBounds = Screen.FromHandle(Handle).WorkingArea;
+                MaximizedBounds = new Rectangle(MaximizedBounds.X - 5, MaximizedBounds.Y - 5, MaximizedBounds.Width + 10, MaximizedBounds.Height + 10);
+                WindowState = FormWindowState.Maximized;
+
+                window_maximize.Text = "❐";
+            }
 
             wplayer = new MediaPlayer();
             wplayer.Volume = (double)(Properties.Settings.Default.volume / 100.0);
@@ -56,11 +157,26 @@ namespace Vivace
                 }
             }
 
+            //try
+            //{
+            //    spotify = new Spotify();
+            //    spotify.Initialize(this);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine(ex.Message);
+            //}
+
+            playlistImport = new PlaylistImport();
+            playlistImport.form = this;
+
             LoadList(Properties.Settings.Default.lastlist);
         }
         public void LoadList(string _name)
         {
-            paused = false;
+            paused = true;
+
+            play.Text = "▶";
 
             wplayer.Stop();
 
@@ -82,6 +198,11 @@ namespace Vivace
             {
                 albumlist.Items.Add(Path.GetFileNameWithoutExtension(f));
                 songs.Add(f);
+            }
+
+            if (songs.Count > 0)
+            {
+                next_Click(null, null);
             }
         }
 
@@ -197,7 +318,9 @@ namespace Vivace
             Regex r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
             title = r.Replace(title, "");
 
-            using (Stream output = File.OpenWrite(source + title + ".mp3"))
+            string p = source + title + ".wav";
+
+            using (Stream output = File.OpenWrite(p))
             {
                 using (var request = new HttpRequestMessage(HttpMethod.Head, video.Uri))
                 {
@@ -216,14 +339,75 @@ namespace Vivace
                     {
                         await Task.Run(() => output.Write(buffer, 0, read));
                         totalRead += read;
+
+                        progressBar1.Invoke(new Action(() => progressBar1.Maximum = 100));
+                        progressBar1.Invoke(new Action(() => progressBar1.Value = (int)Math.Round((double)(totalRead / totalByte * 100.0))));
                     }
 
                     Console.WriteLine("Download Complete");
                 }
             }
 
-            albumlist.Invoke(new Action(() => albumlist.Items.Add(Path.GetFileNameWithoutExtension(source + title + ".mp3"))));
-            songs.Add(source + title + ".mp3");
+            albumlist.Invoke(new Action(() => albumlist.Items.Add(Path.GetFileNameWithoutExtension(p))));
+            songs.Add(p);
+
+            this.setName.Invoke(new Action(() => this.setName.Text = ""));
+            this.setName.Invoke(new Action(() => this.setName.Enabled = true));
+            this.searchlist.Invoke(new Action(() => this.searchlist.Enabled = true));
+            this.search.Invoke(new Action(() => this.search.Enabled = true));
+            this.searchText.Invoke(new Action(() => this.searchText.Enabled = true));
+            searching = false;
+        }
+        public async void ConvertVideo(string url, string songFileName)
+        {
+            var youtube = YouTube.Default;
+            var video = youtube.GetVideo(url);
+            var client = new HttpClient();
+            long? totalByte = 0;
+
+            if (!Directory.Exists(source))
+            {
+                Directory.CreateDirectory(source);
+            }
+
+            string title = songFileName;
+
+            string regexSearch = new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars());
+            Regex r = new Regex(string.Format("[{0}]", Regex.Escape(regexSearch)));
+            title = r.Replace(title, "");
+
+            string p = source + title + ".wav";
+
+            using (Stream output = File.OpenWrite(p))
+            {
+                using (var request = new HttpRequestMessage(HttpMethod.Head, video.Uri))
+                {
+                    await Task.Run(() => totalByte = client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead).Result.Content.Headers.ContentLength);
+                }
+
+                using (await Task.Run(() => input = client.GetStreamAsync(video.Uri)))
+                {
+                    byte[] buffer = new byte[16 * 1024];
+                    int read = 0;
+                    int totalRead = 0;
+
+                    Console.WriteLine("Download Started");
+
+                    while (await Task.Run(() => (read = input.Result.Read(buffer, 0, buffer.Length)) > 0))
+                    {
+                        await Task.Run(() => output.Write(buffer, 0, read));
+                        totalRead += read;
+
+                        progressBar1.Invoke(new Action(() => progressBar1.Maximum = 100));
+                        progressBar1.Invoke(new Action(() => progressBar1.Value = (int)Math.Round((double)(totalRead / totalByte * 100.0))));
+                    }
+
+                    Console.WriteLine("Download Complete");
+                }
+            }
+
+            albumlist.Invoke(new Action(() => albumlist.Items.Add(Path.GetFileNameWithoutExtension(p))));
+            songs.Add(p);
 
             this.setName.Invoke(new Action(() => this.setName.Text = ""));
             this.setName.Invoke(new Action(() => this.setName.Enabled = true));
@@ -237,14 +421,15 @@ namespace Vivace
             if (current != path)
             {
                 paused = false;
+                play.Text = "⏸";
 
                 Console.WriteLine("Song changed");
 
-                nowPlaying.Text = Path.GetFileNameWithoutExtension(path);
-                this.Text = Path.GetFileNameWithoutExtension(path);
-
                 wplayer.Open(new Uri(path));
                 wplayer.Play();
+
+                nowPlaying.Text = Path.GetFileNameWithoutExtension(path);
+                this.Text = Path.GetFileNameWithoutExtension(path);
 
                 timeline.Maximum = 0;
                 timeline.Value = 0;
@@ -265,18 +450,21 @@ namespace Vivace
                     {
                         paused = true;
                         wplayer.Pause();
+                        play.Text = "▶";
                     }
                     else
                     {
                         paused = false;
                         wplayer.Play();
+                        play.Text = "⏸";
                     }
                 }
                 else
                 {
                     paused = false;
                     albumlist.SelectedIndex = 0;
-                    PlaySong(songs[0]);
+                    play.Text = "⏸";
+                    next_Click(null, null);
                 }
             }
         }
@@ -402,6 +590,42 @@ namespace Vivace
             }
 
             lastIndex = albumlist.SelectedIndex;
+        }
+
+        private async void window_close_Click(object sender, EventArgs e)
+        {
+            Properties.Settings.Default.windowwidth = Width;
+            Properties.Settings.Default.windowheight = Height;
+            Properties.Settings.Default.windowmaximized = WindowState == FormWindowState.Maximized;
+            await Task.Run(() => Properties.Settings.Default.Save());
+
+            Application.Exit();
+        }
+        private void window_maximize_Click(object sender, EventArgs e)
+        {
+            if (WindowState == FormWindowState.Normal)
+            {
+                MaximizedBounds = Screen.FromHandle(Handle).WorkingArea;
+                MaximizedBounds = new Rectangle(MaximizedBounds.X - 5, MaximizedBounds.Y - 5, MaximizedBounds.Width + 10, MaximizedBounds.Height + 10);
+                WindowState = FormWindowState.Maximized;
+
+                window_maximize.Text = "❐";
+            }
+            else
+            {
+                WindowState = FormWindowState.Normal;
+
+                window_maximize.Text = "⬜";
+            }
+        }
+        private void window_minimize_Click(object sender, EventArgs e)
+        {
+            WindowState = FormWindowState.Minimized;
+        }
+
+        private void import_Click(object sender, EventArgs e)
+        {
+            playlistImport.ShowDialog();
         }
 
         private void searchlist_SelectedIndexChanged(object sender, EventArgs e)

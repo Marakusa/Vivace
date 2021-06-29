@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Vivace"
-#define MyAppVersion "0.1.0"
+#define MyAppVersion "0.2.1"
 #define MyAppPublisher "Aquatic Studios"
 #define MyAppURL "https://aquaticstudios.org/"
 #define MyAppExeName "Vivace.exe"
@@ -45,7 +45,13 @@ Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\MediaToolkit.dll"
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.Win32.Registry.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.Win32.Registry.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Newtonsoft.Json.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Newtonsoft.Json.xml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Newtonsoft.Json.xml"; DestDir: "{app}"; Flags: ignoreversion             
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\System.Diagnostics.DiagnosticSource.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\System.Diagnostics.DiagnosticSource.xml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\System.Security.AccessControl.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\System.Security.AccessControl.xml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\System.Security.Principal.Windows.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\System.Security.Principal.Windows.xml"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\taglib-sharp.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Vivace.exe.config"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Vivace.pdb"; DestDir: "{app}"; Flags: ignoreversion
