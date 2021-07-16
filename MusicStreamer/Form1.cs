@@ -11,24 +11,13 @@ using VideoLibrary;
 using System.Windows.Media;
 using System.Runtime.InteropServices;
 using System.Drawing;
+using Microsoft.WindowsAPICodePack.Taskbar;
 
 namespace Vivace
 {
     public partial class Form1 : Form
     {
-        public string version = "0.2.1";
-
-        public string source = "";
-
-        MediaPlayer wplayer;
-
-        public List<string> songs = new List<string>();
-        public List<string> searchList = new List<string>();
-        public List<string> searched = new List<string>();
-
-        public bool paused = false;
-        public bool update = false;
-
+        #region System Functions
 
         public const int WM_NCLBUTTONDOWN = 0xA1;
         public const int HT_CAPTION = 0x2;
@@ -110,9 +99,44 @@ namespace Vivace
             }
         }
 
-        PlaylistImport playlistImport;
+        protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+        {
+            if (!msg.HWnd.Equals(this.Handle) &&
+                (keyData == Keys.Left || keyData == Keys.Right ||
+                keyData == Keys.Up || keyData == Keys.Down))
+                return true;
+            else
+                return false;
 
-        //public Spotify spotify;
+            return base.ProcessCmdKey(ref msg, keyData);
+        }
+
+        #endregion
+
+        public string version = "0.4.1";
+
+        public string source = "";
+
+        public List<string> songs = new List<string>();
+        public List<string> searchList = new List<string>();
+        public List<string> searched = new List<string>();
+
+        public bool paused = false;
+        public bool update = false;
+
+        MediaPlayer wplayer;
+        PlaylistImport playlistImport;
+        LyricsReader lyricsReader;
+
+        string current = "";
+        bool searching = false;
+        int lastIndex = -1;
+        int lastSearchIndex = -1;
+
+        ThumbnailToolBarButton tbbPlay;
+        ThumbnailToolBarButton tbbPause;
+        ThumbnailToolBarButton tbbNext;
+        ThumbnailToolBarButton tbbPrev;
 
         public Form1()
         {
@@ -167,10 +191,96 @@ namespace Vivace
             //    Console.WriteLine(ex.Message);
             //}
 
+
+            tbbPlay = new ThumbnailToolBarButton(Properties.Resources.Play, "Play");
+            tbbPlay.Click += TbbPlay_Click;
+
+            tbbPause = new ThumbnailToolBarButton(Properties.Resources.Pause, "Pause");
+            tbbPause.Click += TbbPlay_Click;
+
+            tbbNext = new ThumbnailToolBarButton(Properties.Resources.Next, "Next");
+            tbbNext.Click += TbbNext_Click;
+
+            tbbPrev = new ThumbnailToolBarButton(Properties.Resources.Prev, "Previous");
+            tbbPrev.Click += TbbPrev_Click;
+
+            TaskbarManager.Instance.ThumbnailToolBars.AddButtons(this.Handle, tbbPrev, tbbPlay, tbbNext);
+
+
             playlistImport = new PlaylistImport();
             playlistImport.form = this;
 
+            lyricsReader = new LyricsReader();
+
             LoadList(Properties.Settings.Default.lastlist);
+        }
+
+        public void Search(string search)
+        {
+            lastSearchIndex = -1;
+
+            this.setName.Enabled = false;
+            this.searchlist.Enabled = false;
+            this.search.Enabled = false;
+            this.searchText.Enabled = false;
+            searching = true;
+
+            searchlist.Items.Clear();
+            searchList.Clear();
+            searched.Clear();
+
+            search = search.Replace(":", "%3A");
+            search = search.Replace("/", "%2F");
+            search = search.Replace("?", "%3F");
+            search = search.Replace("=", "%3D");
+            search = search.Replace("&", "%26");
+
+            var url = "https://www.youtube.com/results?search_query=" + search;
+            Console.WriteLine(url);
+            WebRequest request = WebRequest.Create(url);
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+
+            Stream dataStream = response.GetResponseStream();
+            StreamReader reader = new StreamReader(dataStream);
+            string responseFromServer = reader.ReadToEnd();
+
+            reader.Close();
+            dataStream.Close();
+            response.Close();
+
+            var youtube = YouTube.Default;
+            var linkParser = new Regex(@"(?:\/watch\?v=)\S{11}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+            int i = 0;
+
+            foreach (Match m in linkParser.Matches(responseFromServer))
+            {
+                if (i < 5)
+                {
+                    var video = youtube.GetVideo(m.Value);
+
+                    string min = Math.Floor((double)(video.Info.LengthSeconds / 60)).ToString("0");
+                    string sec = ((double)video.Info.LengthSeconds - Math.Floor((double)(video.Info.LengthSeconds / 60)) * 60).ToString("00");
+                    string len = min + ":" + sec;
+
+                    searched.Add(video.Title);
+                    searchlist.Items.Add(len + " " + video.Title);
+                    searchList.Add(m.Value);
+                }
+                else
+                {
+                    break;
+                }
+
+                i++;
+            }
+
+            this.setName.Text = "";
+            this.setName.Enabled = true;
+            this.searchlist.Enabled = true;
+            this.search.Enabled = true;
+            this.searchText.Enabled = true;
+            searching = false;
         }
         public void LoadList(string _name)
         {
@@ -196,111 +306,27 @@ namespace Vivace
 
             foreach (var f in Directory.GetFiles(source))
             {
-                albumlist.Items.Add(Path.GetFileNameWithoutExtension(f));
                 songs.Add(f);
             }
 
             if (songs.Count > 0)
             {
-                next_Click(null, null);
-            }
-        }
-
-        bool searching = false;
-
-        private void search_Click(object sender, EventArgs e)
-        {
-            if (!searching)
-                SearchAsync(searchText.Text);
-        }
-        private void searchText_KeyPress(object sender, KeyPressEventArgs e)
-        {
-            if (e.KeyChar.ToString() == "\r" && !searching)
-            {
-                SearchAsync(searchText.Text);
-            }
-        }
-
-        string current = "";
-
-        public async Task SearchAsync(string search)
-        {
-            lastSearchIndex = -1;
-
-            this.setName.Enabled = false;
-            this.searchlist.Enabled = false;
-            this.search.Enabled = false;
-            this.searchText.Enabled = false;
-            searching = true;
-
-            try
-            {
-                var youtube = YouTube.Default;
-                youtube.GetVideo(search);
-
-                await Task.Run(() => ConvertVideo(search));
-            }
-            catch
-            {
-                searchlist.Items.Clear();
-                searchList.Clear();
-                searched.Clear();
-
-                var url = "https://www.youtube.com/results?search_query=" + search;
-
-                WebRequest request = WebRequest.Create(url);
-
-                HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-
-                Stream dataStream = response.GetResponseStream();
-
-                StreamReader reader = new StreamReader(dataStream);
-
-                string responseFromServer = reader.ReadToEnd();
-
-                reader.Close();
-                dataStream.Close();
-                response.Close();
-
-                var youtube = YouTube.Default;
-
-                var linkParser = new Regex(@"(?:\/watch\?v=)\S{11}", RegexOptions.Compiled | RegexOptions.IgnoreCase);
-
-                int i = 0;
-
-                foreach (Match m in linkParser.Matches(responseFromServer))
+                if (shuffle.Checked)
                 {
-                    if (i < 5)
-                    {
-                        var video = youtube.GetVideo(m.Value);
-
-                        string min = Math.Floor((double)(video.Info.LengthSeconds / 60)).ToString("0");
-                        string sec = ((double)video.Info.LengthSeconds - Math.Floor((double)(video.Info.LengthSeconds / 60)) * 60).ToString("00");
-                        string len = min + ":" + sec;
-
-                        searched.Add(video.Title);
-                        searchlist.Items.Add(video.Title + " " + len);
-                        searchList.Add(m.Value);
-                    }
-                    else
-                    {
-                        break;
-                    }
-
-                    i++;
+                    songs = CreateShuffleList(songs);
                 }
 
-                this.setName.Text = "";
-                this.setName.Enabled = true;
-                this.searchlist.Enabled = true;
-                this.search.Enabled = true;
-                this.searchText.Enabled = true;
-                searching = false;
+                foreach (var s in songs)
+                {
+                    albumlist.Items.Add(Path.GetFileNameWithoutExtension(s));
+                }
+
+                NextSong();
             }
         }
 
         Task<Stream> input;
-        public async void ConvertVideo(string url)
+        private async void ConvertVideo(string url)
         {
             var youtube = YouTube.Default;
             var video = youtube.GetVideo(url);
@@ -358,7 +384,7 @@ namespace Vivace
             this.searchText.Invoke(new Action(() => this.searchText.Enabled = true));
             searching = false;
         }
-        public async void ConvertVideo(string url, string songFileName)
+        private async void ConvertVideo(string url, string songFileName)
         {
             var youtube = YouTube.Default;
             var video = youtube.GetVideo(url);
@@ -416,7 +442,8 @@ namespace Vivace
             this.searchText.Invoke(new Action(() => this.searchText.Enabled = true));
             searching = false;
         }
-        public void PlaySong(string path)
+
+        private void PlaySong(string path)
         {
             if (current != path)
             {
@@ -431,16 +458,75 @@ namespace Vivace
                 nowPlaying.Text = Path.GetFileNameWithoutExtension(path);
                 this.Text = Path.GetFileNameWithoutExtension(path);
 
-                timeline.Maximum = 0;
-                timeline.Value = 0;
+                timelineFill.Size = new Size(0, timelineFill.Height);
 
                 current = path;
 
                 Console.WriteLine("Song playing");
             }
         }
+        private void NextSong()
+        {
+            if (songs.Count > 0)
+            {
+                if (songs.Count > 1)
+                {
+                    if (albumlist.SelectedIndex + 1 < albumlist.Items.Count)
+                        albumlist.SelectedIndex++;
+                    else
+                        albumlist.SelectedIndex = 0;
+                }
+                else
+                {
+                    albumlist.SelectedIndex = 0;
+                }
 
-        private void play_Click(object sender, EventArgs e)
+                PlaySong(songs[albumlist.SelectedIndex]);
+
+                foreach (Form f in Application.OpenForms)
+                {
+                    if (f == lyricsReader)
+                    {
+                        lyricsReader.SetLyrics(Lyrics.Find(Path.GetFileNameWithoutExtension(current)), Path.GetFileNameWithoutExtension(current));
+                    }
+                }
+            }
+        }
+        private void PreviousSong()
+        {
+            if (songs.Count > 0)
+            {
+                if (songs.Count > 1)
+                {
+                    if (albumlist.SelectedIndex - 1 >= 0)
+                        albumlist.SelectedIndex--;
+                    else
+                        albumlist.SelectedIndex = albumlist.Items.Count - 1;
+                }
+                else
+                {
+                    albumlist.SelectedIndex = 0;
+                }
+
+                PlaySong(songs[albumlist.SelectedIndex]);
+
+                foreach (Form f in Application.OpenForms)
+                {
+                    if (f == lyricsReader)
+                    {
+                        lyricsReader.SetLyrics(Lyrics.Find(Path.GetFileNameWithoutExtension(current)), Path.GetFileNameWithoutExtension(current));
+                    }
+                }
+            }
+        }
+        private void SetSongPosition(int x)
+        {
+            double duration = wplayer.NaturalDuration.TimeSpan.TotalSeconds;
+
+            TimeSpan t = new TimeSpan((long)Math.Round((double)((double)x / (double)timelineBackground.Width) * (double)duration) * 10000000);
+            wplayer.Position = t;
+        }
+        private void PlayPause()
         {
             if (songs.Count > 0)
             {
@@ -464,134 +550,69 @@ namespace Vivace
                     paused = false;
                     albumlist.SelectedIndex = 0;
                     play.Text = "⏸";
-                    next_Click(null, null);
+                    NextSong();
                 }
             }
         }
 
-        private void timer1_Tick(object sender, EventArgs e)
+        private List<string> CreateShuffleList(List<string> oldList)
         {
-            if (update)
+            List<string> newList = new List<string>();
+
+            Random random = new Random();
+
+            for (int i = 0; i < oldList.Count;)
             {
-                Application.Exit();
-                return;
+                int r = random.Next(0, oldList.Count);
+                newList.Add(oldList[r]);
+                oldList.RemoveAt(r);
             }
 
-            if (wplayer.IsBuffering)
-            {
-                this.Text = "Vivace - Buffering...";
-                timestamp.Text = "Buffering...";
-            }
-            else
-            {
-                if (wplayer.HasAudio)
-                {
-                    if (!paused)
-                    {
-                        this.Text = Path.GetFileNameWithoutExtension(wplayer.Source.LocalPath);
-                    }
-                    else
-                        this.Text = "Vivace";
-
-                    try
-                    {
-                        if (wplayer.Position.TotalSeconds >= wplayer.NaturalDuration.TimeSpan.TotalSeconds)
-                        {
-                            if (shuffle.Checked)
-                            {
-                                albumlist.SelectedIndex = new Random().Next(0, albumlist.Items.Count);
-                            }
-                            else
-                            {
-                                if (albumlist.SelectedIndex + 1 < albumlist.Items.Count)
-                                    albumlist.SelectedIndex++;
-                                else
-                                    albumlist.SelectedIndex = 0;
-                            }
-
-                            PlaySong(songs[albumlist.SelectedIndex]);
-                        }
-                        else
-                        {
-                            int time = (int)Math.Round(wplayer.Position.TotalSeconds);
-
-                            if (time <= timeline.Maximum && time >= timeline.Minimum)
-                            {
-                                double m = Math.Floor((double)(wplayer.Position.TotalSeconds / 60));
-                                double s = ((double)wplayer.Position.TotalSeconds - Math.Floor((double)(wplayer.Position.TotalSeconds / 60)) * 60);
-
-                                if (s.ToString("00") == "60")
-                                {
-                                    m = Math.Floor((double)(wplayer.Position.TotalSeconds / 60)) + 1;
-                                    s = 0;
-                                }
-
-                                double ml = Math.Floor((double)(wplayer.NaturalDuration.TimeSpan.TotalSeconds / 60));
-                                double sl = ((double)wplayer.NaturalDuration.TimeSpan.TotalSeconds - Math.Floor((double)(wplayer.NaturalDuration.TimeSpan.TotalSeconds / 60)) * 60);
-
-                                if (sl.ToString("00") == "60")
-                                {
-                                    ml = Math.Floor((double)(wplayer.NaturalDuration.TimeSpan.TotalSeconds / 60)) + 1;
-                                    sl = 0;
-                                }
-
-                                timestamp.Text = m.ToString("0") + ":" + s.ToString("00") + " / " + ml.ToString("0") + ":" + sl.ToString("00");
-
-                                timeline.Maximum = (int)wplayer.NaturalDuration.TimeSpan.TotalSeconds;
-                                timeline.Value = (int)wplayer.Position.TotalSeconds;
-                            }
-                            else
-                            {
-                                timeline.Value = 0;
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.Message);
-                    }
-                }
-                else
-                {
-                    this.Text = "Vivace";
-                    timeline.Value = 0;
-                }
-            }
+            return newList;
         }
-
-        public double Duration(string file)
+        private double Duration(string file)
         {
             WMPLib.WindowsMediaPlayer wmp = new WMPLib.WindowsMediaPlayer();
             WMPLib.IWMPMedia mediainfo = wmp.newMedia(file);
             return mediainfo.duration;
         }
 
-        private void volume_Scroll(object sender, EventArgs e)
+        private void import_Click(object sender, EventArgs e)
         {
-            wplayer.Volume = volume.Value / 100.0;
-            Properties.Settings.Default.volume = volume.Value;
-            Properties.Settings.Default.Save();
+            playlistImport.ShowDialog();
         }
-
-        private void timeline_Scroll(object sender, EventArgs e)
+        private void lyrics_Click(object sender, EventArgs e)
         {
-            TimeSpan t = new TimeSpan(timeline.Value * 10000000);
-            wplayer.Position = t;
+            lyricsReader.SetLyrics(Lyrics.Find(Path.GetFileNameWithoutExtension(current)), Path.GetFileNameWithoutExtension(current));
+            lyricsReader.Show();
         }
-
-        int lastIndex = -1;
-        int lastSearchIndex = -1;
-
-        private void albumlist_SelectedIndexChanged(object sender, EventArgs e)
+        private void next_Click(object sender, EventArgs e)
         {
-            if (albumlist.SelectedIndex == lastIndex && albumlist.SelectedIndex >= 0 && albumlist.SelectedIndex < albumlist.Items.Count)
-            {
-                PlaySong(songs[albumlist.SelectedIndex]);
-            }
-
-            lastIndex = albumlist.SelectedIndex;
+            NextSong();
         }
-
+        private void prev_Click(object sender, EventArgs e)
+        {
+            PreviousSong();
+        }
+        private void button1_Click(object sender, EventArgs e)
+        {
+            AlbumList albumList = new AlbumList();
+            albumList.form = this;
+            albumList.ShowDialog();
+        }
+        private void button2_Click(object sender, EventArgs e)
+        {
+            LoadList(Properties.Settings.Default.lastlist);
+        }
+        private void search_Click(object sender, EventArgs e)
+        {
+            if (!searching)
+                Search(searchText.Text);
+        }
+        private void play_Click(object sender, EventArgs e)
+        {
+            PlayPause();
+        }
         private async void window_close_Click(object sender, EventArgs e)
         {
             Properties.Settings.Default.windowwidth = Width;
@@ -622,17 +643,115 @@ namespace Vivace
         {
             WindowState = FormWindowState.Minimized;
         }
-
-        private void import_Click(object sender, EventArgs e)
+        private void TbbPlay_Click(object sender, ThumbnailButtonClickedEventArgs e)
         {
-            playlistImport.ShowDialog();
+            PlayPause();
+        }
+        private void TbbNext_Click(object sender, ThumbnailButtonClickedEventArgs e)
+        {
+            NextSong();
+        }
+        private void TbbPrev_Click(object sender, ThumbnailButtonClickedEventArgs e)
+        {
+            PreviousSong();
         }
 
+        private void searchText_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            if (e.KeyChar.ToString() == "\r" && !searching)
+            {
+                Search(searchText.Text);
+            }
+        }
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            if (update)
+            {
+                Application.Exit();
+                return;
+            }
+
+            if (wplayer.IsBuffering)
+            {
+                this.Text = "Vivace - Buffering...";
+                timestamp.Text = "Buffering...";
+            }
+            else
+            {
+                if (wplayer.HasAudio)
+                {
+                    if (!paused)
+                    {
+                        this.Text = Path.GetFileNameWithoutExtension(wplayer.Source.LocalPath);
+                    }
+                    else
+                        this.Text = "Vivace";
+
+                    try
+                    {
+                        if (wplayer.Position.TotalSeconds >= wplayer.NaturalDuration.TimeSpan.TotalSeconds)
+                        {
+                            NextSong();
+                        }
+                        else
+                        {
+                            int time = (int)Math.Round(wplayer.Position.TotalSeconds);
+
+                            double m = Math.Floor((double)(wplayer.Position.TotalSeconds / 60));
+                            double s = ((double)wplayer.Position.TotalSeconds - Math.Floor((double)(wplayer.Position.TotalSeconds / 60)) * 60);
+
+                            if (s.ToString("00") == "60")
+                            {
+                                m = Math.Floor((double)(wplayer.Position.TotalSeconds / 60)) + 1;
+                                s = 0;
+                            }
+
+                            double ml = Math.Floor((double)(wplayer.NaturalDuration.TimeSpan.TotalSeconds / 60));
+                            double sl = ((double)wplayer.NaturalDuration.TimeSpan.TotalSeconds - Math.Floor((double)(wplayer.NaturalDuration.TimeSpan.TotalSeconds / 60)) * 60);
+
+                            if (sl.ToString("00") == "60")
+                            {
+                                ml = Math.Floor((double)(wplayer.NaturalDuration.TimeSpan.TotalSeconds / 60)) + 1;
+                                sl = 0;
+                            }
+
+                            timestamp.Text = m.ToString("0") + ":" + s.ToString("00") + " / " + ml.ToString("0") + ":" + sl.ToString("00");
+
+                            timelineFill.Size = new Size((int)Math.Round((wplayer.Position.TotalSeconds / wplayer.NaturalDuration.TimeSpan.TotalSeconds) * timelineBackground.Width), timelineFill.Height);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                }
+                else
+                {
+                    this.Text = "Vivace";
+                    timelineFill.Size = new Size(0, timelineFill.Height);
+                }
+            }
+        }
+        private void volume_Scroll(object sender, EventArgs e)
+        {
+            wplayer.Volume = volume.Value / 100.0;
+            Properties.Settings.Default.volume = volume.Value;
+            Properties.Settings.Default.Save();
+        }
+        private void albumlist_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (albumlist.SelectedIndex == lastIndex && albumlist.SelectedIndex >= 0 && albumlist.SelectedIndex < albumlist.Items.Count)
+            {
+                PlaySong(songs[albumlist.SelectedIndex]);
+            }
+
+            lastIndex = albumlist.SelectedIndex;
+        }
         private void searchlist_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (searchlist.SelectedIndex == lastSearchIndex && searchlist.SelectedIndex >= 0 && searchlist.SelectedIndex < searchlist.Items.Count)
             {
-                SearchAsync(searchList[searchlist.SelectedIndex]);
+                Search(searchList[searchlist.SelectedIndex]);
             }
             else
             {
@@ -642,68 +761,87 @@ namespace Vivace
 
             lastSearchIndex = searchlist.SelectedIndex;
         }
-
-        private void next_Click(object sender, EventArgs e)
+        private void timelineBackground_MouseDown(object sender, MouseEventArgs e)
         {
-            if (songs.Count > 0)
-            {
-                if (shuffle.Checked)
-                {
-                    albumlist.SelectedIndex = new Random().Next(0, albumlist.Items.Count);
-                }
-                else
-                {
-                    if (albumlist.SelectedIndex + 1 < albumlist.Items.Count)
-                        albumlist.SelectedIndex++;
-                    else
-                        albumlist.SelectedIndex = 0;
-                }
-
-                PlaySong(songs[albumlist.SelectedIndex]);
-            }
+            SetSongPosition(e.X);
         }
-
-        private void prev_Click(object sender, EventArgs e)
+        private void timelineFill_MouseDown(object sender, MouseEventArgs e)
         {
-            if (songs.Count > 0)
-            {
-                if (albumlist.SelectedIndex - 1 >= 0)
-                    albumlist.SelectedIndex--;
-                else
-                    albumlist.SelectedIndex = albumlist.Items.Count - 1;
-
-                PlaySong(songs[albumlist.SelectedIndex]);
-            }
+            SetSongPosition(e.X);
         }
-
-        private void button1_Click(object sender, EventArgs e)
-        {
-            AlbumList albumList = new AlbumList();
-            albumList.form = this;
-            albumList.ShowDialog();
-        }
-
-        private void button2_Click(object sender, EventArgs e)
-        {
-            LoadList(Properties.Settings.Default.lastlist);
-        }
-
         private void shuffle_CheckedChanged(object sender, EventArgs e)
         {
             Properties.Settings.Default.shuffle = shuffle.Checked;
             Properties.Settings.Default.Save();
-        }
 
+            if (songs.Count > 0)
+            {
+                if (shuffle.Checked)
+                {
+                    songs = CreateShuffleList(songs);
+
+                    albumlist.Items.Clear();
+
+                    foreach (var s in songs)
+                    {
+                        albumlist.Items.Add(Path.GetFileNameWithoutExtension(s));
+                    }
+
+                    albumlist.SelectedIndex = 0;
+                    PlaySong(songs[albumlist.SelectedIndex]);
+                }
+                else
+                {
+                    LoadList(Properties.Settings.Default.lastlist);
+                }
+            }
+        }
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
-            if (e.KeyCode == Keys.MediaPlayPause)
+            if (e.KeyCode == Keys.Right)
             {
-                if (!paused)
+                TimeSpan t = new TimeSpan(10 * 10000000);
+                wplayer.Position += t;
+            }
+            if (e.KeyCode == Keys.Left)
+            {
+                TimeSpan t = new TimeSpan(10 * 10000000);
+                wplayer.Position -= t;
+            }
+            if (e.KeyCode == Keys.Up)
+            {
+                wplayer.Volume += 0.1;
+                volume.Value = (int)Math.Round(wplayer.Volume * 100.0);
+            }
+            if (e.KeyCode == Keys.Down)
+            {
+                wplayer.Volume -= 0.1;
+                volume.Value = (int)Math.Round(wplayer.Volume * 100.0);
+            }
+            if (e.KeyCode == Keys.Space)
+            {
+                if (paused)
                 {
+                    paused = false;
                     wplayer.Play();
                 }
                 else
                 {
+                    paused = true;
+                    wplayer.Pause();
+                }
+            }
+
+            if (e.KeyCode == Keys.MediaPlayPause)
+            {
+                if (paused)
+                {
+                    paused = false;
+                    wplayer.Play();
+                }
+                else
+                {
+                    paused = true;
                     wplayer.Pause();
                 }
             }
@@ -719,11 +857,11 @@ namespace Vivace
             }
             if (e.KeyCode == Keys.MediaNextTrack)
             {
-                next_Click(null, null);
+                NextSong();
             }
             if (e.KeyCode == Keys.MediaPreviousTrack)
             {
-                prev_Click(null, null);
+                PreviousSong();
             }
         }
     }

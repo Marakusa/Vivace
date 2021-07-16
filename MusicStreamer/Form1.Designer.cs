@@ -39,7 +39,6 @@ namespace Vivace
             this.next = new System.Windows.Forms.Button();
             this.prev = new System.Windows.Forms.Button();
             this.volume = new System.Windows.Forms.TrackBar();
-            this.timeline = new System.Windows.Forms.TrackBar();
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.searchlist = new System.Windows.Forms.ListBox();
             this.setName = new System.Windows.Forms.TextBox();
@@ -54,10 +53,13 @@ namespace Vivace
             this.window_minimize = new System.Windows.Forms.Button();
             this.import = new System.Windows.Forms.Button();
             this.panel1 = new System.Windows.Forms.Panel();
+            this.timelineBackground = new System.Windows.Forms.Panel();
+            this.timelineFill = new System.Windows.Forms.Panel();
+            this.lyrics = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.volume)).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)(this.timeline)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.panel1.SuspendLayout();
+            this.timelineBackground.SuspendLayout();
             this.SuspendLayout();
             // 
             // search
@@ -70,6 +72,7 @@ namespace Vivace
             this.search.Name = "search";
             this.search.Size = new System.Drawing.Size(94, 22);
             this.search.TabIndex = 0;
+            this.search.TabStop = false;
             this.search.Text = "Search";
             this.search.UseVisualStyleBackColor = true;
             this.search.Click += new System.EventHandler(this.search_Click);
@@ -84,6 +87,7 @@ namespace Vivace
             this.searchText.Name = "searchText";
             this.searchText.Size = new System.Drawing.Size(560, 22);
             this.searchText.TabIndex = 1;
+            this.searchText.TabStop = false;
             this.searchText.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.searchText_KeyPress);
             // 
             // albumlist
@@ -97,6 +101,7 @@ namespace Vivace
             this.albumlist.Name = "albumlist";
             this.albumlist.Size = new System.Drawing.Size(432, 271);
             this.albumlist.TabIndex = 4;
+            this.albumlist.TabStop = false;
             this.albumlist.SelectedIndexChanged += new System.EventHandler(this.albumlist_SelectedIndexChanged);
             // 
             // nowPlaying
@@ -111,37 +116,55 @@ namespace Vivace
             // play
             // 
             this.play.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.play.BackColor = System.Drawing.Color.Transparent;
+            this.play.FlatAppearance.BorderSize = 0;
+            this.play.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.ButtonShadow;
+            this.play.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.Highlight;
+            this.play.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.play.Font = new System.Drawing.Font("Segoe UI Symbol", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.play.Location = new System.Drawing.Point(371, 331);
             this.play.Name = "play";
             this.play.Size = new System.Drawing.Size(30, 30);
             this.play.TabIndex = 8;
+            this.play.TabStop = false;
             this.play.Text = "▶";
-            this.play.UseVisualStyleBackColor = true;
+            this.play.UseVisualStyleBackColor = false;
             this.play.Click += new System.EventHandler(this.play_Click);
             // 
             // next
             // 
             this.next.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.next.BackColor = System.Drawing.Color.Transparent;
+            this.next.FlatAppearance.BorderSize = 0;
+            this.next.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.ButtonShadow;
+            this.next.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.Highlight;
+            this.next.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.next.Font = new System.Drawing.Font("Segoe UI Symbol", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.next.Location = new System.Drawing.Point(401, 331);
+            this.next.Location = new System.Drawing.Point(402, 331);
             this.next.Name = "next";
             this.next.Size = new System.Drawing.Size(30, 30);
             this.next.TabIndex = 9;
+            this.next.TabStop = false;
             this.next.Text = "⏭";
-            this.next.UseVisualStyleBackColor = true;
+            this.next.UseVisualStyleBackColor = false;
             this.next.Click += new System.EventHandler(this.next_Click);
             // 
             // prev
             // 
             this.prev.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
+            this.prev.BackColor = System.Drawing.Color.Transparent;
+            this.prev.FlatAppearance.BorderSize = 0;
+            this.prev.FlatAppearance.MouseDownBackColor = System.Drawing.SystemColors.ButtonShadow;
+            this.prev.FlatAppearance.MouseOverBackColor = System.Drawing.SystemColors.Highlight;
+            this.prev.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.prev.Font = new System.Drawing.Font("Segoe UI Symbol", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.prev.Location = new System.Drawing.Point(341, 331);
+            this.prev.Location = new System.Drawing.Point(340, 331);
             this.prev.Name = "prev";
             this.prev.Size = new System.Drawing.Size(30, 30);
             this.prev.TabIndex = 10;
+            this.prev.TabStop = false;
             this.prev.Text = "⏮";
-            this.prev.UseVisualStyleBackColor = true;
+            this.prev.UseVisualStyleBackColor = false;
             this.prev.Click += new System.EventHandler(this.prev_Click);
             // 
             // volume
@@ -153,23 +176,9 @@ namespace Vivace
             this.volume.Name = "volume";
             this.volume.Size = new System.Drawing.Size(125, 23);
             this.volume.TabIndex = 11;
+            this.volume.TabStop = false;
             this.volume.TickStyle = System.Windows.Forms.TickStyle.None;
             this.volume.Scroll += new System.EventHandler(this.volume_Scroll);
-            // 
-            // timeline
-            // 
-            this.timeline.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.timeline.AutoSize = false;
-            this.timeline.LargeChange = 10;
-            this.timeline.Location = new System.Drawing.Point(0, 296);
-            this.timeline.Maximum = 100;
-            this.timeline.Name = "timeline";
-            this.timeline.Size = new System.Drawing.Size(775, 23);
-            this.timeline.SmallChange = 5;
-            this.timeline.TabIndex = 12;
-            this.timeline.TickStyle = System.Windows.Forms.TickStyle.None;
-            this.timeline.Scroll += new System.EventHandler(this.timeline_Scroll);
             // 
             // timer1
             // 
@@ -187,6 +196,7 @@ namespace Vivace
             this.searchlist.Name = "searchlist";
             this.searchlist.Size = new System.Drawing.Size(322, 243);
             this.searchlist.TabIndex = 13;
+            this.searchlist.TabStop = false;
             this.searchlist.SelectedIndexChanged += new System.EventHandler(this.searchlist_SelectedIndexChanged);
             // 
             // setName
@@ -198,6 +208,7 @@ namespace Vivace
             this.setName.Name = "setName";
             this.setName.Size = new System.Drawing.Size(322, 22);
             this.setName.TabIndex = 14;
+            this.setName.TabStop = false;
             // 
             // timestamp
             // 
@@ -213,13 +224,17 @@ namespace Vivace
             // 
             this.shuffle.Anchor = System.Windows.Forms.AnchorStyles.Bottom;
             this.shuffle.AutoSize = true;
+            this.shuffle.BackColor = System.Drawing.Color.White;
+            this.shuffle.FlatAppearance.CheckedBackColor = System.Drawing.SystemColors.Highlight;
+            this.shuffle.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.shuffle.Font = new System.Drawing.Font("Segoe UI Symbol", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.shuffle.Location = new System.Drawing.Point(437, 335);
             this.shuffle.Name = "shuffle";
-            this.shuffle.Size = new System.Drawing.Size(45, 25);
+            this.shuffle.Size = new System.Drawing.Size(42, 25);
             this.shuffle.TabIndex = 16;
+            this.shuffle.TabStop = false;
             this.shuffle.Text = "🔀";
-            this.shuffle.UseVisualStyleBackColor = true;
+            this.shuffle.UseVisualStyleBackColor = false;
             this.shuffle.CheckedChanged += new System.EventHandler(this.shuffle_CheckedChanged);
             // 
             // pictureBox1
@@ -242,6 +257,7 @@ namespace Vivace
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(94, 22);
             this.button1.TabIndex = 18;
+            this.button1.TabStop = false;
             this.button1.Text = "Playlists";
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
@@ -256,6 +272,7 @@ namespace Vivace
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(94, 22);
             this.button2.TabIndex = 19;
+            this.button2.TabStop = false;
             this.button2.Text = "Refresh";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Click += new System.EventHandler(this.button2_Click);
@@ -263,7 +280,7 @@ namespace Vivace
             // progressBar1
             // 
             this.progressBar1.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-            this.progressBar1.Location = new System.Drawing.Point(5, 351);
+            this.progressBar1.Location = new System.Drawing.Point(5, 349);
             this.progressBar1.Name = "progressBar1";
             this.progressBar1.Size = new System.Drawing.Size(132, 10);
             this.progressBar1.TabIndex = 20;
@@ -281,6 +298,7 @@ namespace Vivace
             this.window_close.Name = "window_close";
             this.window_close.Size = new System.Drawing.Size(46, 32);
             this.window_close.TabIndex = 21;
+            this.window_close.TabStop = false;
             this.window_close.Text = "╳";
             this.window_close.UseVisualStyleBackColor = false;
             this.window_close.Click += new System.EventHandler(this.window_close_Click);
@@ -298,6 +316,7 @@ namespace Vivace
             this.window_maximize.Name = "window_maximize";
             this.window_maximize.Size = new System.Drawing.Size(46, 32);
             this.window_maximize.TabIndex = 22;
+            this.window_maximize.TabStop = false;
             this.window_maximize.Text = "⬜";
             this.window_maximize.UseVisualStyleBackColor = false;
             this.window_maximize.Click += new System.EventHandler(this.window_maximize_Click);
@@ -315,6 +334,7 @@ namespace Vivace
             this.window_minimize.Name = "window_minimize";
             this.window_minimize.Size = new System.Drawing.Size(46, 32);
             this.window_minimize.TabIndex = 23;
+            this.window_minimize.TabStop = false;
             this.window_minimize.Text = "—";
             this.window_minimize.UseVisualStyleBackColor = false;
             this.window_minimize.Click += new System.EventHandler(this.window_minimize_Click);
@@ -326,12 +346,14 @@ namespace Vivace
             this.import.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
             this.import.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
             this.import.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
-            this.import.Location = new System.Drawing.Point(578, 39);
+            this.import.Location = new System.Drawing.Point(478, 39);
             this.import.Name = "import";
             this.import.Size = new System.Drawing.Size(94, 22);
             this.import.TabIndex = 24;
+            this.import.TabStop = false;
             this.import.Text = "Import";
             this.import.UseVisualStyleBackColor = true;
+            this.import.Visible = false;
             this.import.Click += new System.EventHandler(this.import_Click);
             // 
             // panel1
@@ -339,11 +361,11 @@ namespace Vivace
             this.panel1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
+            this.panel1.Controls.Add(this.timelineBackground);
             this.panel1.Controls.Add(this.albumlist);
             this.panel1.Controls.Add(this.searchlist);
             this.panel1.Controls.Add(this.setName);
             this.panel1.Controls.Add(this.timestamp);
-            this.panel1.Controls.Add(this.timeline);
             this.panel1.Controls.Add(this.progressBar1);
             this.panel1.Controls.Add(this.play);
             this.panel1.Controls.Add(this.next);
@@ -355,12 +377,50 @@ namespace Vivace
             this.panel1.Size = new System.Drawing.Size(773, 364);
             this.panel1.TabIndex = 25;
             // 
+            // timelineBackground
+            // 
+            this.timelineBackground.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.timelineBackground.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.timelineBackground.Controls.Add(this.timelineFill);
+            this.timelineBackground.Location = new System.Drawing.Point(7, 299);
+            this.timelineBackground.Name = "timelineBackground";
+            this.timelineBackground.Size = new System.Drawing.Size(760, 7);
+            this.timelineBackground.TabIndex = 21;
+            this.timelineBackground.MouseDown += new System.Windows.Forms.MouseEventHandler(this.timelineBackground_MouseDown);
+            // 
+            // timelineFill
+            // 
+            this.timelineFill.BackColor = System.Drawing.SystemColors.Highlight;
+            this.timelineFill.Dock = System.Windows.Forms.DockStyle.Left;
+            this.timelineFill.Location = new System.Drawing.Point(0, 0);
+            this.timelineFill.Name = "timelineFill";
+            this.timelineFill.Size = new System.Drawing.Size(70, 7);
+            this.timelineFill.TabIndex = 22;
+            this.timelineFill.MouseDown += new System.Windows.Forms.MouseEventHandler(this.timelineFill_MouseDown);
+            // 
+            // lyrics
+            // 
+            this.lyrics.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.lyrics.FlatAppearance.MouseDownBackColor = System.Drawing.Color.Gray;
+            this.lyrics.FlatAppearance.MouseOverBackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
+            this.lyrics.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.lyrics.Location = new System.Drawing.Point(578, 39);
+            this.lyrics.Name = "lyrics";
+            this.lyrics.Size = new System.Drawing.Size(94, 22);
+            this.lyrics.TabIndex = 26;
+            this.lyrics.TabStop = false;
+            this.lyrics.Text = "Lyrics (BETA)";
+            this.lyrics.UseVisualStyleBackColor = true;
+            this.lyrics.Click += new System.EventHandler(this.lyrics_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.White;
             this.ClientSize = new System.Drawing.Size(784, 461);
+            this.Controls.Add(this.lyrics);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.import);
             this.Controls.Add(this.window_minimize);
@@ -374,16 +434,17 @@ namespace Vivace
             this.Controls.Add(this.search);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.KeyPreview = true;
             this.Name = "Form1";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
             this.Text = "Vivace";
             this.KeyDown += new System.Windows.Forms.KeyEventHandler(this.Form1_KeyDown);
             this.MouseDown += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDown);
             ((System.ComponentModel.ISupportInitialize)(this.volume)).EndInit();
-            ((System.ComponentModel.ISupportInitialize)(this.timeline)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).EndInit();
             this.panel1.ResumeLayout(false);
             this.panel1.PerformLayout();
+            this.timelineBackground.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -399,7 +460,6 @@ namespace Vivace
         private System.Windows.Forms.Button next;
         private System.Windows.Forms.Button prev;
         private System.Windows.Forms.TrackBar volume;
-        private System.Windows.Forms.TrackBar timeline;
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.ListBox searchlist;
         private System.Windows.Forms.TextBox setName;
@@ -414,6 +474,9 @@ namespace Vivace
         private System.Windows.Forms.Button window_minimize;
         private System.Windows.Forms.Button import;
         private System.Windows.Forms.Panel panel1;
+        private System.Windows.Forms.Panel timelineBackground;
+        private System.Windows.Forms.Panel timelineFill;
+        private System.Windows.Forms.Button lyrics;
     }
 }
 

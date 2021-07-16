@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Vivace"
-#define MyAppVersion "0.2.1"
+#define MyAppVersion "0.4.1"
 #define MyAppPublisher "Aquatic Studios"
 #define MyAppURL "https://aquaticstudios.org/"
 #define MyAppExeName "Vivace.exe"
@@ -43,7 +43,12 @@ Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\HtmlAgilityPack.x
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\libvideo.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\MediaToolkit.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.Win32.Registry.dll"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.Win32.Registry.xml"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.Win32.Registry.xml"; DestDir: "{app}"; Flags: ignoreversion    
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.WindowsAPICodePack.dll"; DestDir: "{app}"; Flags: ignoreversion   
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.WindowsAPICodePack.ExtendedLinguisticServices.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.WindowsAPICodePack.Sensors.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.WindowsAPICodePack.Shell.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Microsoft.WindowsAPICodePack.ShellExtensions.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Newtonsoft.Json.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\Newtonsoft.Json.xml"; DestDir: "{app}"; Flags: ignoreversion             
 Source: "C:\GitHub\MusicStreamer\MusicStreamer\bin\x64\Release\System.Diagnostics.DiagnosticSource.dll"; DestDir: "{app}"; Flags: ignoreversion
