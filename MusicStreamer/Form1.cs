@@ -161,7 +161,9 @@ namespace Vivace
             volume.Value = Properties.Settings.Default.volume;
             shuffle.Checked = Properties.Settings.Default.shuffle;
 
-            WebRequest webRequest = WebRequest.Create("https://aquaticstudios.org/gamedownloads/Vivace.ver");
+            // Please type in the version URL (official url is "https://aquaticstudios.org/gamedownloads/Vivace.ver")
+            WebRequest webRequest = WebRequest.Create(Please_type_in_the_version_URL);
+            
             HttpWebResponse response = (HttpWebResponse)webRequest.GetResponse();
             Stream dataStream = response.GetResponseStream();
             StreamReader reader = new StreamReader(dataStream);
@@ -176,7 +178,9 @@ namespace Vivace
                 
                 if (res == DialogResult.Yes)
                 {
-                    Process.Start("https://aquaticstudios.org/Vivace.exe");
+                    // Please type in the update file URL location (official url is "https://aquaticstudios.org/Vivace.exe")
+                    Process.Start(Please_type_in_the_update_file_URL);
+                    
                     update = true;
                 }
             }
