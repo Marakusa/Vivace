@@ -113,7 +113,7 @@ namespace Vivace
 
         #endregion
 
-        public string version = "0.4.1";
+        public string version = "0.4.3";
 
         public string source = "";
 
