@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Vivace"
-#define MyAppVersion "0.4.1"
+#define MyAppVersion "0.4.3"
 #define MyAppPublisher "Aquatic Studios"
 #define MyAppURL "https://aquaticstudios.org/"
 #define MyAppExeName "Vivace.exe"
